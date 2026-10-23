@@ -1,3 +1,4 @@
+
 name: Run 6-Hour Stream
 
 on:
@@ -12,7 +13,7 @@ concurrency:
 jobs:
   run-stream:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 350
 
     steps:
       - name: Checkout repository
@@ -27,8 +28,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
-          pip install --upgrade pip
-          pip install streamlink
+          python -m pip install --upgrade pip
+          python -m pip install streamlink
+
+      - name: Verify FFmpeg H.264 encoder
+        run: |
+          ffmpeg -hide_banner -encoders 2>/dev/null | grep libx264
 
       - name: Run Main Script
-        run: python main.py
+        env:
+          TIKTOK_URL: ${{ secrets.TIKTOK_URL }}
+        run: python -u main.py
