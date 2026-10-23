@@ -9,12 +9,12 @@ from datetime import datetime
 
 # ================= SETTINGS =================
 
+# رابط التيك توك ومفتاح يوتيوب مدمجان مباشرة هنا
 TIKTOK_URL = os.getenv(
     "TIKTOK_URL",
     "https://www.tiktok.com/@d.shakertawfiqalaroury/live"
 ).strip()
 
-# تم دمج مفتاح البث الجديد تلقائياً كخيار افتراضي
 YOUTUBE_RTMP = os.getenv(
     "YOUTUBE_RTMP",
     "rtmp://a.rtmp.youtube.com/live2/qmbm-d84r-yvj8-exts-b3yp"
@@ -111,7 +111,7 @@ def make_ffmpeg_command():
         "-stats_period", "10",
         "-stats",
 
-        "-re",                             # تنظيم الإرسال بالسرعة الحقيقية لمنع التقطيع وتحذير يوتيوب
+        "-re",                             # إجبار الإرسال بالسرعة الحقيقية لمنع التتقطيع وتحذير يوتيوب
         "-fflags", "+genpts+discardcorrupt",
         "-thread_queue_size", "4096",
         "-i", "pipe:0",
@@ -152,7 +152,6 @@ def start_stream():
         bufsize=0
     )
 
-    # تشغيل FFmpeg فوراً لتفريغ الـ pipe بدون تأخير
     ffmpeg_process = subprocess.Popen(
         make_ffmpeg_command(),
         stdin=streamlink_process.stdout,
