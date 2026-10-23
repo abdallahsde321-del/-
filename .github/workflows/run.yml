@@ -1,14 +1,18 @@
 name: Run 6-Hour Stream via Docker
 
 on:
-  workflow_dispatch: # للتشغيل اليدوي متى شئت
+  workflow_dispatch:
   schedule:
-    - cron: '50 */5 * * *' # يبدأ كل 5 ساعات و 50 دقيقة لضمان تداخل بسيط يمنع توقف البث
+    - cron: '50 */5 * * *'
+
+concurrency:
+  group: youtube-stream-group
+  cancel-in-progress: true
 
 jobs:
   run-docker-stream:
     runs-on: ubuntu-latest
-    timeout-minutes: 360 # تحديد مدة التشغيل بـ 6 ساعات كاملة
+    timeout-minutes: 360
 
     steps:
       - name: Checkout repository
