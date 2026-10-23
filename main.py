@@ -15,11 +15,11 @@ TIKTOK_URL = os.getenv(
 
 YOUTUBE_RTMP = os.getenv(
     "YOUTUBE_RTMP",
-    "rtmp://a.rtmp.youtube.com/live2/rvz8-2zmy-jxt4-hvdd-a19k"
+    "rtmp://a.rtmp.youtube.com/live2/qmbm-d84r-yvj8-exts-b3yp"
 ).strip()
 
-CHECK_INTERVAL_OFFLINE = 10
-RETRY_DELAY = 2
+CHECK_INTERVAL_OFFLINE = 15
+RETRY_DELAY = 3
 
 stop_event = threading.Event()
 streamlink_process = None
@@ -74,36 +74,40 @@ signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
 
-# ================== STREAMLINK (ULTRA BUFFER) ==================
+# ================== STREAMLINK ==================
 
 def make_streamlink_command():
     return [
         "streamlink",
         "--loglevel", "warning",
-        "--hls-live-edge", "8",             # زيادة حافة البث الحي لتخزين عدد أكبر من المقاطع
-        "--ringbuffer-size", "1024M",        # رفع الذاكرة المؤقتة إلى 1 جيجابايت كاملة استغلالاً للرامات العالية
-        "--retry-streams", "30",
-        "--retry-max", "50",
-        "--stream-segment-attempts", "30",  # محاولات مكثفة جداً لجلب السگمنت وتفادي الفاقد
-        "--stream-segment-timeout", "25",
-        "--stream-timeout", "60",
+        "--hls-live-edge", "4",
+        "--ringbuffer-size", "512M",
+        "--hls-segment-threads", "2",
+        "--retry-streams", "5",
+        "--retry-max", "10",
+        "--stream-segment-attempts", "5",
+        "--stream-segment-timeout", "15",
+        "--stream-timeout", "30",
+        "--http-header", "User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
         "--stdout",
         TIKTOK_URL,
         "best"
     ]
 
 
-# ================== FFMPEG (ULTRA BUFFER) ==================
+# ================== FFMPEG ==================
 
 def make_ffmpeg_command():
     return [
         "ffmpeg",
         "-hide_banner",
         "-loglevel", "warning",
-        "-stats_period", "10",
-        "-nostdin",
+        "-stats",
 
-        "-thread_queue_size", "32768",     # رفع طابور الذاكرة الخاص بـ FFmpeg إلى أقصى طاقة استيعابية آمنة
+        "-fflags", "+genpts+discardcorrupt+nobuffer",
+        "-use_wallclock_as_timestamps", "1",
+
+        "-thread_queue_size", "4096",
         "-i", "pipe:0",
 
         "-map", "0:v:0",
@@ -116,12 +120,12 @@ def make_ffmpeg_command():
         "-ac", "2",
         "-af", "aresample=async=1000:min_hard_comp=0.100000:first_pts=0",
 
-        "-fflags", "+genpts+discardcorrupt+nobuffer+fastseek",
-        "-avoid_negative_ts", "make_zero",
-        "-use_wallclock_as_timestamps", "1",
         "-tune", "zerolatency",
+        "-fps_mode", "passthrough",
+        "-flush_packets", "1",
 
         "-flvflags", "no_duration_filesize",
+
         "-f", "flv",
         YOUTUBE_RTMP
     ]
@@ -135,7 +139,7 @@ def start_stream():
     if stop_event.is_set():
         return False
 
-    log("Connecting to TikTok Live with Ultra Buffer (1GB)...")
+    log("Connecting to TikTok Live...")
 
     streamlink_process = subprocess.Popen(
         make_streamlink_command(),
@@ -144,7 +148,7 @@ def start_stream():
         bufsize=0
     )
 
-    for _ in range(4):
+    for _ in range(6):
         if stop_event.is_set():
             return False
 
@@ -162,14 +166,14 @@ def start_stream():
     ffmpeg_process = subprocess.Popen(
         make_ffmpeg_command(),
         stdin=streamlink_process.stdout,
-        stdout=subprocess.DEVNULL,
+        stdout=None,
         stderr=None,
         bufsize=0
     )
 
     streamlink_process.stdout.close()
 
-    log("Relay started with ultra buffer. Video COPY; audio AAC 128k.")
+    log("Relay active: Ultra-stable (512M Buffer, Video COPY, Audio AAC 128k).")
 
     while not stop_event.is_set():
         sl_code = streamlink_process.poll()
@@ -199,10 +203,10 @@ def main():
         log("ERROR: Set YOUTUBE_RTMP environment variable.")
         sys.exit(1)
 
-    log("TikTok -> YouTube Relay Started")
-    log("Video encoding: OFF (COPY)")
+    log("TikTok -> YouTube Relay Started (GitHub Actions Mode)")
+    log("Video encoding: COPY")
     log("Audio encoding: AAC 128k")
-    log("Automatic reconnection: ON")
+    log("Auto Reconnection: ON")
 
     while not stop_event.is_set():
         started_at = time.monotonic()
@@ -224,10 +228,10 @@ def main():
 
         if elapsed > 60:
             delay = RETRY_DELAY
-            log(f"Stream disconnected. Retrying in {delay}s...")
+            log(f"Stream disconnected. Reconnecting in {delay}s...")
         else:
             delay = CHECK_INTERVAL_OFFLINE
-            log(f"Stream unavailable. Checking again in {delay}s...")
+            log(f"Stream offline. Re-checking in {delay}s...")
 
         stop_event.wait(delay)
 
