@@ -1,4 +1,4 @@
-name: Run 6-Hour Stream via Docker
+name: Run 6-Hour Stream
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  run-docker-stream:
+  run-stream:
     runs-on: ubuntu-latest
     timeout-minutes: 360
 
@@ -18,8 +18,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build Docker Image (No Cache)
-        run: docker build --no-cache -t tiktok-to-youtube .
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-      - name: Run Docker Container
-        run: docker run --rm tiktok-to-youtube
+      - name: Install FFmpeg and Streamlink
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          pip install --upgrade pip
+          pip install streamlink
+
+      - name: Run Main Script
+        run: python main.py
