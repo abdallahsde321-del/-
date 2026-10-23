@@ -22,4 +22,11 @@ jobs:
         run: docker build -t tiktok-to-youtube .
 
       - name: Run Docker Container
-        run: docker run --rm tiktok-to-youtube
+        run: |
+          docker run --rm \
+            -e TIKTOK_URL \
+            -e YOUTUBE_RTMP \
+            tiktok-to-youtube
+        env:
+          TIKTOK_URL: ${{ secrets.TIKTOK_URL }}
+          YOUTUBE_RTMP: ${{ secrets.YOUTUBE_RTMP }}
