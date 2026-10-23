@@ -1,4 +1,3 @@
-
 import os
 import sys
 import time
@@ -10,12 +9,12 @@ from datetime import datetime
 
 # ================= SETTINGS =================
 
-TIKTOK_URL = os.getenv(
-    "TIKTOK_URL",
+TIKTOK_URL = (
     "https://www.tiktok.com/@d.shakertawfiqalaroury/live"
-).strip()
+)
 
 YOUTUBE_STREAM_KEY = "qmbm-d84r-yvj8-exts-b3yp"
+
 YOUTUBE_RTMP = (
     f"rtmp://a.rtmp.youtube.com/live2/{YOUTUBE_STREAM_KEY}"
 )
@@ -85,6 +84,7 @@ def check_dependencies():
         raise RuntimeError("Streamlink is not installed.")
 
     ffmpeg = shutil.which("ffmpeg")
+
     if not ffmpeg:
         raise RuntimeError("FFmpeg is not installed.")
 
@@ -100,7 +100,7 @@ def check_dependencies():
     if result.returncode != 0 or "libx264" not in encoders:
         raise RuntimeError(
             "FFmpeg does not provide libx264. "
-            "Install an FFmpeg build with H.264 encoding support."
+            "Install FFmpeg with H.264 encoding support."
         )
 
     log("Streamlink and libx264 verified.")
@@ -143,7 +143,7 @@ def make_ffmpeg_command():
         "-thread_queue_size", "4096",
         "-i", "pipe:0",
 
-        # Video: H.264 for YouTube RTMP compatibility
+        # H.264 video encoding
         "-map", "0:v:0",
         "-c:v", "libx264",
         "-preset", "ultrafast",
@@ -152,7 +152,7 @@ def make_ffmpeg_command():
         "-crf", "20",
         "-fps_mode", "passthrough",
 
-        # Audio: AAC 128 kbps
+        # AAC audio encoding
         "-map", "0:a:0?",
         "-c:a", "aac",
         "-b:a", "128k",
@@ -197,6 +197,7 @@ def start_stream():
     log("Relay started: TikTok -> YouTube.")
     log("Video: H.264 / libx264 / ultrafast / CRF 20.")
     log("Audio: AAC 128 kbps.")
+    log("Buffer: 512M.")
     log("Automatic reconnection: enabled.")
 
     while not stop_event.is_set():
@@ -217,10 +218,6 @@ def start_stream():
 # ================= MAIN LOOP =================
 
 def main():
-    if not TIKTOK_URL:
-        log("ERROR: TIKTOK_URL is empty.")
-        sys.exit(1)
-
     try:
         check_dependencies()
     except Exception as exc:
@@ -259,7 +256,7 @@ def main():
                 MAX_BACKOFF
             )
             log(
-                f"Stream unavailable or failed. "
+                f"Stream unavailable or connection failed. "
                 f"Retrying in {delay}s."
             )
 
