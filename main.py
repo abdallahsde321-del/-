@@ -9,7 +9,6 @@ from datetime import datetime
 
 # ================= SETTINGS =================
 
-# رابط التيك توك ومفتاح يوتيوب مدمجان مباشرة هنا
 TIKTOK_URL = os.getenv(
     "TIKTOK_URL",
     "https://www.tiktok.com/@d.shakertawfiqalaroury/live"
@@ -85,7 +84,7 @@ def make_streamlink_command():
         "--loglevel", "warning",
         "--hls-live-edge", "4",
         "--ringbuffer-size", "512M",
-        "--hls-segment-threads", "3",
+        "--stream-segment-threads", "2",
         "--retry-streams", "5",
         "--retry-max", "5",
         "--stream-segment-attempts", "5",
@@ -111,7 +110,7 @@ def make_ffmpeg_command():
         "-stats_period", "10",
         "-stats",
 
-        "-re",                             # إجبار الإرسال بالسرعة الحقيقية لمنع التتقطيع وتحذير يوتيوب
+        "-re",                             # إجبار الإرسال بالسرعة الحقيقية لمنع التقطيع
         "-fflags", "+genpts+discardcorrupt",
         "-thread_queue_size", "4096",
         "-i", "pipe:0",
