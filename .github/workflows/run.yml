@@ -18,8 +18,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build Docker Image
-        run: docker build -t tiktok-to-youtube .
+      - name: Build Docker Image (No Cache)
+        run: docker build --no-cache -t tiktok-to-youtube .
 
       - name: Run Docker Container
         run: docker run --rm tiktok-to-youtube
