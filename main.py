@@ -110,13 +110,17 @@ def make_ffmpeg_command():
         "-stats_period", "10",
         "-stats",
 
-        "-re",                             # إجبار الإرسال بالسرعة الحقيقية لمنع التقطيع
+        "-re",                             
         "-fflags", "+genpts+discardcorrupt",
         "-thread_queue_size", "4096",
         "-i", "pipe:0",
 
         "-map", "0:v:0",
-        "-c:v", "copy",
+        # تحويل الفيديو إلى H.264 متوافق لتفادي مشكلة HEVC (codec c)
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-tune", "zerolatency",
+        "-pix_fmt", "yuv420p",
 
         "-map", "0:a:0?",
         "-c:a", "aac",
@@ -161,7 +165,7 @@ def start_stream():
 
     streamlink_process.stdout.close()
 
-    log("Relay active: TikTok -> YouTube (512M Buffer, Video COPY, Audio AAC 128k)")
+    log("Relay active: TikTok -> YouTube (512M Buffer, Video x264 Ultrafast, Audio AAC 128k)")
 
     while not stop_event.is_set():
         sl_code = streamlink_process.poll()
