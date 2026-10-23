@@ -116,6 +116,7 @@ def make_ffmpeg_command():
         "-i", "pipe:0",
 
         "-map", "0:v:0",
+        # تحويل الترميز لمنع خطأ HEVC / codec c
         "-c:v", "libx264",
         "-preset", "ultrafast",
         "-tune", "zerolatency",
